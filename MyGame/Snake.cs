@@ -19,7 +19,7 @@ using System.Threading.Tasks;
     {
         public Direction direction;
         private Point element = new Point();
-        private int size;
+        private int siz
         private Color color;
         public Queue<Point> body = new Queue<Point>();
 

@@ -14,12 +14,14 @@ namespace MyGame
     public partial class Form1 : Form
     {
         private Random rnd = new Random();
-        Snake snake = new Snake();
-
+        private Snake snake = new Snake();
+        private int NewBlockAppearsInSec;
+        private int Level = 1;
+        private int Score;
         public Form1()
         {
             InitializeComponent();
-       
+            NewBlockAppearsInSec = 3000;
             snake.Draw(panel2);
         }
 
@@ -30,6 +32,20 @@ namespace MyGame
 
         private void timer1_Tick(object sender, EventArgs e)
         {
+            if (!snake.IsBlockCatched())
+                snake.CatchBlock();
+            if (snake.IsBlockCatched())
+            {
+                Score += Level * 10;               
+                if ((snake.body.Count() % 5) == 0)
+                {
+                    timer1.Interval -= 100; 
+                    ++Level;
+                }
+                richTextBox1.Text = $"{Score} Level:{Level}";
+                richTextBox1.Update();
+                snake.GenerateNewBlock();
+            }
             snake.Move();
             snake.Draw(panel2);
         }
@@ -55,9 +71,7 @@ namespace MyGame
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
         {
-            TextBox box = (TextBox)sender;
-            //box.Text = Score.ToString();
-
+           
         }
 
         private void GetNewBlock()
@@ -148,14 +162,15 @@ namespace MyGame
 
         public Snake()
         {
-            direction = Direction.Down;
+            direction = Direction.Right;
             color = Color.DeepPink;
-            element.Y = 100;
+            element.Y = 300;
             for (int i = 0; i < 3; ++i)
             {
                 element.X = 60 - i * 20;
                 body.Add(element);
             }
+            GenerateNewBlock();
         }
 
         public int GetSize() => body.Count();
@@ -163,9 +178,9 @@ namespace MyGame
 
         public void Move(Point p = new Point())
         {
-            element = body[0];
             if ((p.X == 0) && (p.Y == 0))
             {
+                element = body[0];
                 switch (direction)
                 {
                     case Direction.Down:
@@ -201,34 +216,45 @@ namespace MyGame
             {
                 g.DrawEllipse(myPen, body[i].X, body[i].Y, 11, 10);
             }
+            if (!BlockCatched)
+            {
+                g.DrawEllipse(myPen, NewBlock.X, NewBlock.Y, 11, 10);
+            }
             myPen.Dispose();
             g.Dispose();
         }
 
         public void GenerateNewBlock()
         {
-            NewBlock = new Point(rnd.Next(2, 95) * 10, rnd.Next(8, 58) * 10);
+            NewBlock = new Point(rnd.Next(1, 47) * 20, rnd.Next(1, 29) * 20);
+            BlockCatched = false;
         }
 
         public bool IsBlockCatched() => BlockCatched;
-        private void CatchBlock()
+        public void CatchBlock()
         {
             switch (direction)
             {
                 case Direction.Down:
-                    if ((body[0].X == NewBlock.X) && ((NewBlock.Y - body[0].Y) < 10))
-
-                    break;
-                case Direction.Left:
-                    element.X -= 20;
-                    break;
-                case Direction.Right:
-                    element.X += 20;
-                    break;
                 case Direction.Up:
-                    element.Y -= 20;
+                    if ((body[0].X == NewBlock.X) && (Math.Abs(NewBlock.Y - body[0].Y) < 22))
+                    {
+                        Move(NewBlock);
+                        BlockCatched = true;
+                    }
+                        break;
+                case Direction.Left:
+                case Direction.Right:
+                    if ((body[0].Y == NewBlock.Y) && (Math.Abs(body[0].X - NewBlock.X) < 22))
+                    {
+                        Move(NewBlock);
+                        BlockCatched = true;
+                    }
                     break;
             }
+            if (BlockCatched)
+                NewBlock = new Point();
+                
         }
     }
 }
