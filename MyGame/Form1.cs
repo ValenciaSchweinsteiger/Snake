@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+
 namespace MyGame
 {
     public partial class Form1 : Form
@@ -139,33 +140,84 @@ namespace MyGame
     {
         public Direction direction;
         private Point element = new Point();
-        private int size;
+        public Point NewBlock;
         private Color color;
         public List<Point> body = new List<Point>();
+        private Random rnd = new Random();
+        private bool BlockCatched = false;
 
         public Snake()
         {
             direction = Direction.Down;
-            size = 3;
             color = Color.DeepPink;
             element.Y = 100;
-            for (int i = 0; i < size; ++i)
+            for (int i = 0; i < 3; ++i)
             {
                 element.X = 60 - i * 20;
                 body.Add(element);
             }
         }
 
-        public int GetSize() => size;
+        public int GetSize() => body.Count();
         public Color GetColor() => color;
 
-        public void Move()
+        public void Move(Point p = new Point())
         {
             element = body[0];
+            if ((p.X == 0) && (p.Y == 0))
+            {
+                switch (direction)
+                {
+                    case Direction.Down:
+                        element.Y += 20;
+                        break;
+                    case Direction.Left:
+                        element.X -= 20;
+                        break;
+                    case Direction.Right:
+                        element.X += 20;
+                        break;
+                    case Direction.Up:
+                        element.Y -= 20;
+                        break;
+                 }
+                body.RemoveAt(body.Count - 1);
+            }
+            else
+            {
+                element = p;
+            }
+             body.Insert(0, element);
+        }
+        public void Draw(Panel panel)
+        {
+            Bitmap bmp = new Bitmap(panel.Width, panel.Height);
+            panel.BackgroundImage = (Image)bmp;
+            panel.BackgroundImageLayout = ImageLayout.None;
+
+            Graphics g = Graphics.FromImage(bmp);
+            Pen myPen = new Pen(Color.DeepPink, 10);
+            for (int i = 0; i < body.Count(); ++i)
+            {
+                g.DrawEllipse(myPen, body[i].X, body[i].Y, 11, 10);
+            }
+            myPen.Dispose();
+            g.Dispose();
+        }
+
+        public void GenerateNewBlock()
+        {
+            NewBlock = new Point(rnd.Next(2, 95) * 10, rnd.Next(8, 58) * 10);
+        }
+
+        public bool IsBlockCatched() => BlockCatched;
+        private void CatchBlock()
+        {
             switch (direction)
             {
                 case Direction.Down:
-                    element.Y += 20;
+                    if ((body[0].X == NewBlock.X) && ((NewBlock.Y - body[0].Y) < 10))
+
                     break;
                 case Direction.Left:
                     element.X -= 20;
@@ -177,26 +229,6 @@ namespace MyGame
                     element.Y -= 20;
                     break;
             }
-            body.RemoveAt(body.Count - 1);
-            body.Insert(0, element);
         }
-        public void Draw(Panel panel)
-        {
-            Bitmap bmp = new Bitmap(panel.Width, panel.Height);
-            panel.BackgroundImage = (Image)bmp;
-            panel.BackgroundImageLayout = ImageLayout.None;
-
-            Graphics g = Graphics.FromImage(bmp);
-            Pen myPen = new Pen(Color.DeepPink, 10);
-            for (int i = 0; i < size; ++i)
-            {
-                g.DrawEllipse(myPen, body[i].X, body[i].Y, 11, 10);
-            }
-            myPen.Dispose();
-            g.Dispose();
-        }
-
-        
-
     }
 }
