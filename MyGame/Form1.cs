@@ -16,6 +16,7 @@ namespace MyGame
         private Random rnd = new Random();
         private Snake snake = new Snake();
         private int NewBlockAppearsInSec;
+        private int InitTimerIntervalValue = 500;
         private int Level = 1;
         private int Score;
         public Form1()
@@ -23,6 +24,8 @@ namespace MyGame
             InitializeComponent();
             NewBlockAppearsInSec = 3000;
             snake.Draw(panel2);
+            this.timer1.Interval = InitTimerIntervalValue;
+            //timer1.Start();
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -36,14 +39,16 @@ namespace MyGame
                 snake.CatchBlock();
             if (snake.IsBlockCatched())
             {
-                Score += Level * 10;               
+                Score += Level * 10;
                 if ((snake.body.Count() % 5) == 0)
                 {
-                    timer1.Interval -= 100; 
+                    if (this.timer1.Interval > 10)
+                        this.timer1.Interval -= 50;
                     ++Level;
                 }
-                richTextBox1.Text = $"{Score} Level:{Level}";
-                richTextBox1.Update();
+                label3.Text = $"{Score}";
+                label4.Text = $"{Level}";
+                //this.richTextBox1.Update();
                 snake.GenerateNewBlock();
             }
             snake.Move();
@@ -52,7 +57,10 @@ namespace MyGame
 
         private void button1_Click(object sender, EventArgs e)
         {
-
+            snake = new Snake();
+            Level = 1;
+            Score = 0;
+            timer1.Interval = InitTimerIntervalValue;
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -62,10 +70,12 @@ namespace MyGame
             if (button.Text == "Pause")
             {
                 button.Text = "Play";
+                timer1.Stop();
             }
             else if (button.Text == "Play")
             {
                 button.Text = "Pause";
+                timer1.Start();
             }
         }
 
@@ -140,6 +150,16 @@ namespace MyGame
                     return;
             }
         }
+
+        private void label2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 
     public enum Direction
@@ -156,12 +176,15 @@ namespace MyGame
         private Point element = new Point();
         public Point NewBlock;
         private Color color;
-        public List<Point> body = new List<Point>();
+        public List<Point> body;
         private Random rnd = new Random();
-        private bool BlockCatched = false;
+        private bool BlockCatched;
 
         public Snake()
         {
+            BlockCatched = false;
+            body = new List<Point>();
+            NewBlock = new Point();
             direction = Direction.Right;
             color = Color.DeepPink;
             element.Y = 300;
@@ -196,6 +219,14 @@ namespace MyGame
                         element.Y -= 20;
                         break;
                  }
+                if (element.Y > 580)
+                    element.Y %= 580;
+                if (element.Y < 0)
+                    element.Y += 580;
+                if (element.X > 940)
+                    element.X %= 940;
+                if (element.X < 0)
+                    element.X += 940;
                 body.RemoveAt(body.Count - 1);
             }
             else
