@@ -35,6 +35,7 @@ namespace MyGame
 
         private void timer1_Tick(object sender, EventArgs e)
         {
+           
             if (!snake.IsBlockCatched())
                 snake.CatchBlock();
             if (snake.IsBlockCatched())
@@ -42,7 +43,7 @@ namespace MyGame
                 Score += Level * 10;
                 if ((snake.body.Count() % 5) == 0)
                 {
-                    if (this.timer1.Interval > 10)
+                    if (this.timer1.Interval > 50)
                         this.timer1.Interval -= 50;
                     ++Level;
                 }
@@ -51,8 +52,15 @@ namespace MyGame
                 //this.richTextBox1.Update();
                 snake.GenerateNewBlock();
             }
+            snake.PlayMode = GetPlayMode();
+            snake.lastScore = Score;
             snake.Move();
+            if (snake.Loosed)
+            {
+                this.timer1.Stop();
+            }
             snake.Draw(panel2);
+
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -61,11 +69,13 @@ namespace MyGame
             Level = 1;
             Score = 0;
             timer1.Interval = InitTimerIntervalValue;
+            timer1.Start();
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-
+            if (snake.Loosed)
+                return;
             Button button = (Button)sender;
             if (button.Text == "Pause")
             {
@@ -86,7 +96,14 @@ namespace MyGame
 
         private void GetNewBlock()
         {
-            DrawPoint(rnd.Next(2, 95) * 10, rnd.Next(8, 58) * 10);
+            Point p = new Point();
+            do
+            {
+                p.X = rnd.Next(2, 95) * 10;
+                p.Y = rnd.Next(8, 58) * 10;
+            }
+            while (snake.body.Any( x => x.Equals(p)));
+            DrawPoint(p.X,p.Y);
         }
 
         public void DrawPoint(int x, int y)
@@ -160,6 +177,19 @@ namespace MyGame
         {
 
         }
+
+        private void radioButton2_CheckedChanged(object sender, EventArgs e)
+        {
+            this.radioButton2.TabIndex = 0;
+            this.radioButton1.TabIndex = 9;
+        }
+
+        private void radioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+            this.radioButton1.TabIndex = 0;
+            this.radioButton2.TabIndex = 9;
+        }
+        public int GetPlayMode() => (radioButton1.TabIndex == 0 ? 2:1);
     }
 
     public enum Direction
@@ -179,6 +209,9 @@ namespace MyGame
         public List<Point> body;
         private Random rnd = new Random();
         private bool BlockCatched;
+        public int lastScore;
+        public int PlayMode;
+        public bool Loosed;
 
         public Snake()
         {
@@ -188,6 +221,8 @@ namespace MyGame
             direction = Direction.Right;
             color = Color.DeepPink;
             element.Y = 300;
+            PlayMode = 1;
+            Loosed = false;
             for (int i = 0; i < 3; ++i)
             {
                 element.X = 60 - i * 20;
@@ -201,6 +236,8 @@ namespace MyGame
 
         public void Move(Point p = new Point())
         {
+            if (Loosed)
+                return;
             if ((p.X == 0) && (p.Y == 0))
             {
                 element = body[0];
@@ -219,14 +256,41 @@ namespace MyGame
                         element.Y -= 20;
                         break;
                  }
+
                 if (element.Y > 580)
-                    element.Y %= 580;
+                {
+                    if (PlayMode == 1)
+                        element.Y %= 580;
+                    else
+                        GameOver(lastScore);
+                 }
                 if (element.Y < 0)
-                    element.Y += 580;
+                {
+                    if (PlayMode == 1)
+                        element.Y += 590;
+                    else
+                        GameOver(lastScore);
+                }
+                
                 if (element.X > 940)
-                    element.X %= 940;
+                {
+                    if (PlayMode == 1)
+                        element.X %= 940;
+                    else
+                        GameOver(lastScore);
+                }
+                
                 if (element.X < 0)
-                    element.X += 940;
+                {
+                    if (PlayMode == 1)
+                        element.X += 940;
+                    else
+                        GameOver(lastScore);
+                }
+                if (body.Any(x => x.Equals(element)))
+                    GameOver(lastScore);
+                if (Loosed) 
+                    return;
                 body.RemoveAt(body.Count - 1);
             }
             else
@@ -250,6 +314,15 @@ namespace MyGame
             if (!BlockCatched)
             {
                 g.DrawEllipse(myPen, NewBlock.X, NewBlock.Y, 11, 10);
+            }
+            if (PlayMode == 2)
+            {
+                myPen.Color = Color.DimGray;
+                g.DrawLine(myPen, 1, 1, 939, 1);// 639);
+                g.DrawLine(myPen, 1, 1, 1, 579);
+                g.DrawLine(myPen, 1, 1, 939, 1);
+                g.DrawLine(myPen, 939, 1, 939, 579);
+                g.DrawLine(myPen, 1, 579, 939, 579);
             }
             myPen.Dispose();
             g.Dispose();
@@ -287,5 +360,19 @@ namespace MyGame
                 NewBlock = new Point();
                 
         }
+        private void GameOver(int score)
+        {
+            Loosed = true;
+            System.Windows.Forms.MessageBox.Show($"Game Over\nYour Score: {score}");
+        }
+
+        static Predicate<Point> IsSnakePart(Point newPoint)
+        {
+            return delegate (Point p)
+            {
+                return p.Equals(newPoint);
+            };
+        }
     }
+
 }
